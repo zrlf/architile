@@ -1,0 +1,25 @@
+[project]
+name = "architile"
+version = "0.1.0"
+description = "An implementation of all 11 regular and Archimedean tilings"
+readme = "README.md"
+authors = [
+    { name = "florez", email = "florez@ethz.ch" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.3.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "matplotlib>=3.10.7",
+]
