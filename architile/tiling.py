@@ -1,9 +1,10 @@
-"""Archimedian tilings module.
+"""This module implements the 3 regular and 8 semiregular (Archimedean) tilings of the
+plane.
 
 Naming of tilings taken from
 https://www.researchgate.net/publication/231156226_Archimedean_lattices_in_the_bound_states_of_wave_interacting_particles
 
-General info about Archimedian tilings:
+General info about Archimedean tilings:
 https://en.wikipedia.org/wiki/Euclidean_tilings_by_convex_regular_polygons#Archimedean.2C_uniform_or_semiregular_tilings
 """
 
@@ -15,18 +16,18 @@ import numpy as np
 Array: TypeAlias = np.ndarray
 
 
-all_tilings: dict[str, type["ArchimedianTiling"]] = {}
+all_tilings: dict[str, type["ArchimedeanTiling"]] = {}
 
 
 class _CollectAllTilingsMeta(type):
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
-        if name != "ArchimedianTiling":
+        if name != "ArchimedeanTiling":
             all_tilings[name] = new_class
         return new_class
 
 
-class ArchimedianTiling(metaclass=_CollectAllTilingsMeta):
+class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
     def __init__(self, a: float = 1.0) -> None:
         self.a = a
 
@@ -100,7 +101,7 @@ class ArchimedianTiling(metaclass=_CollectAllTilingsMeta):
         return edges
 
 
-class Hex(ArchimedianTiling):
+class Hex(ArchimedeanTiling):
     def bravais_vectors(self) -> np.ndarray:
         # 60 deg hex bravais lattice
         return np.array(
@@ -131,7 +132,7 @@ class Hex(ArchimedianTiling):
         )
 
 
-class Triangular(ArchimedianTiling):
+class Triangular(ArchimedeanTiling):
     def bravais_vectors(self) -> np.ndarray:
         # 60 deg triangular bravais lattice
         return np.array(
@@ -157,7 +158,7 @@ class Triangular(ArchimedianTiling):
         )
 
 
-class Kagome(ArchimedianTiling):
+class Kagome(ArchimedeanTiling):
     def bravais_vectors(self) -> Array:
         return np.array(
             [
@@ -190,7 +191,7 @@ class Kagome(ArchimedianTiling):
         )
 
 
-class Square(ArchimedianTiling):
+class Square(ArchimedeanTiling):
     def bravais_vectors(self):
         return np.array([[self.a, 0.0], [0.0, self.a]])
 
@@ -208,7 +209,7 @@ class Square(ArchimedianTiling):
         )
 
 
-class TruncatedHex(ArchimedianTiling):
+class TruncatedHex(ArchimedeanTiling):
     # 3-12-12 tiling
     def bravais_vectors(self):
         a = self.a
@@ -251,7 +252,7 @@ class TruncatedHex(ArchimedianTiling):
         )
 
 
-class GreatRhombiTriHex(ArchimedianTiling):
+class GreatRhombiTriHex(ArchimedeanTiling):
     # 4-6-12 tiling
     def bravais_vectors(self):
         a = self.a
@@ -302,7 +303,7 @@ class GreatRhombiTriHex(ArchimedianTiling):
         return np.vstack([hex1, hex2, conn_hex], dtype=int)
 
 
-class TruncatedSquare(ArchimedianTiling):
+class TruncatedSquare(ArchimedeanTiling):
     # 4-8-8 tiling
     def bravais_vectors(self):
         return np.array([[self.a, 0.0], [0.0, self.a]])
@@ -327,7 +328,7 @@ class TruncatedSquare(ArchimedianTiling):
         )
 
 
-class SmallRhombiTriHex(ArchimedianTiling):
+class SmallRhombiTriHex(ArchimedeanTiling):
     # 3-4-6-4 tiling
     def bravais_vectors(self):
         a = self.a
@@ -373,7 +374,7 @@ class SmallRhombiTriHex(ArchimedianTiling):
         )
 
 
-class SnubHex(ArchimedianTiling):
+class SnubHex(ArchimedeanTiling):
     # 3-3-3-3-6 tiling
     def bravais_vectors(self):
         a = self.a
@@ -424,7 +425,7 @@ class SnubHex(ArchimedianTiling):
         )
 
 
-class SnubSquare(ArchimedianTiling):
+class SnubSquare(ArchimedeanTiling):
     # 3-3-4-3-4 tiling
     def bravais_vectors(self):
         a_diag = self.a * np.sqrt(2) / 2
@@ -454,7 +455,7 @@ class SnubSquare(ArchimedianTiling):
         )
 
 
-class ElongatedTriangular(ArchimedianTiling):
+class ElongatedTriangular(ArchimedeanTiling):
     # 3-3-3-4-4 tiling
     def bravais_vectors(self):
         a = self.a

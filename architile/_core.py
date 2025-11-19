@@ -2,7 +2,7 @@ from typing import Literal, TypeAlias, overload
 
 import numpy as np
 
-from architile.tiling import ArchimedianTiling
+from architile.tiling import ArchimedeanTiling
 
 Array: TypeAlias = np.ndarray
 Rectangle: TypeAlias = tuple[float, float, float, float]  # (x0, y0, w, h)
@@ -12,7 +12,7 @@ Rectangle: TypeAlias = tuple[float, float, float, float]  # (x0, y0, w, h)
 def tile_into_rectangle(
     lx: float,
     ly: float,
-    tiling: ArchimedianTiling,
+    tiling: ArchimedeanTiling,
     theta: float,
     *,
     return_full: Literal[True],
@@ -21,7 +21,7 @@ def tile_into_rectangle(
 def tile_into_rectangle(
     lx: float,
     ly: float,
-    tiling: ArchimedianTiling,
+    tiling: ArchimedeanTiling,
     theta: float,
     *,
     return_full: Literal[False] = False,
