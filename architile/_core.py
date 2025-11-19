@@ -120,6 +120,10 @@ def tile_into_rectangle(
             )
             nodes_all = np.vstack((nodes_all, add_points))
             edges = np.vstack((edges, add_edges))
+            # if the original tiling had edges on the boundary, they are duplicated now
+            # so we need to deduplicate
+            # not very efficient but ok for now
+            edges = _deduplicate_edges(edges)
 
     # renumbering
     inside, keep = _get_inside_mask(nodes_all)
@@ -279,6 +283,21 @@ def _segment_rect_intersections_vec(edge_points: Array, lx: float, ly: float) ->
     out[cond1, 1] = p[cond1] + t1[cond1, None] * v[cond1]
 
     return out
+
+
+def _deduplicate_edges(edges: Array) -> Array:
+    """Remove duplicate edges (regardless of orientation).
+
+    Args:
+        edges: (M, 2) array with edges (node indices).
+
+    Returns:
+        (K, 2) array with unique edges.
+    """
+    e = np.sort(edges, axis=1)
+    e_view = e.view([("u", e.dtype), ("v", e.dtype)])
+    uniq = np.unique(e_view)
+    return uniq.view(e.dtype).reshape(-1, 2)
 
 
 def _add_boundary_edges(
