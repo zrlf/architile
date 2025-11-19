@@ -20,11 +20,15 @@ from architile import tiling, tile_into_rectangle
 # Create a SnubSquare tiling
 tile = tiling.SnubSquare(a=1.0)
 
-# Tile it into a rectangle of width 5 and height 3
-nodes, edges = tile_into_rectangle(5.0, 3.0, tile)
+# Tile it into a rectangle of width 5 and height 3 (origin at (0,0))
+nodes, edges = tile_into_rectangle((0.0, 0.0, 5.0, 3.0), tile)
+
+# Tile it into a rectangle and add edges along the boundary of the rectangle
+# tiling with partial tiles along the bounding box
+nodes, edges = tile_into_rectangle((0.0, 0.0, 5.0, 3.0), tile, boundary="cut_fill")
 
 # tile it into a rectangle but put the pattern at an angle of 15 degrees
-nodes, edges = tile_into_rectangle(5.0, 3.0, tile, theta=np.pi/12)
+nodes, edges = tile_into_rectangle((0.0, 0.0, 5.0, 3.0), tile, theta=np.pi/12)
 ```
 
 ## Disclaimer
