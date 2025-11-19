@@ -48,8 +48,8 @@ def tile_into_rectangle(lx, ly, tiling, theta=0.0, *, return_full=False):
     (p0, *_), width, height, _ = spanning_parallelogram(
         tiling.bravais_vectors().T, (0, 0, lx, ly), -theta
     )
-    ny = int(np.ceil(height / cell_h))
-    nx = int(np.ceil(width / cell_w))
+    ny = int(np.ceil(height / cell_h)) + 1
+    nx = int(np.ceil(width / cell_w)) + 1
 
     nodes_all, edges_all = tiling.tile(nx, ny, x0=p0)
     R = np.array([[np.cos(-theta), -np.sin(-theta)], [np.sin(-theta), np.cos(-theta)]])
