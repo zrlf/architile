@@ -22,7 +22,7 @@ EPS = 1e-12
 def tile_into_rectangle(
     rect: Rectangle,
     tiling: ArchimedeanTiling,
-    theta: float,
+    theta: float = 0.0,
     *,
     return_full: Literal[True],
     boundary: BoundaryHandling | str = BoundaryHandling.DISCARD,
@@ -31,7 +31,7 @@ def tile_into_rectangle(
 def tile_into_rectangle(
     rect: Rectangle,
     tiling: ArchimedeanTiling,
-    theta: float,
+    theta: float = 0.0,
     *,
     return_full: Literal[False] = False,
     boundary: BoundaryHandling | str = BoundaryHandling.DISCARD,
