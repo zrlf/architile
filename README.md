@@ -1,12 +1,19 @@
 <div align="center">
 
-<h3 align="center">architile : Create lattices with all 11 regular or uniform tilings</h3>
+<h3 align="center">architile : create lattices with all 11 regular or uniform tilings</h3>
 
 A small python library to generate 2D lattices based on repeating any of the 11 regular or uniform tilings.
 Uniform tilings are arrangements of regular polygons that cover a plane without
 gaps or overlaps, where each vertex has the same arrangement of polygons.
 
 </div>
+
+## Features
+
+- Get **nodes** and **connectivity** for any of the 11 regular or uniform tilings
+- Tile into any rectangular area with options for the boundary (cut, cut
+  exactly to bounding box, or fill with partial tiles along the boundary)
+- Rotate the tiling pattern by any angle
 
 ## All 11 regular or uniform tilings
 
