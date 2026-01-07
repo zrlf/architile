@@ -19,6 +19,20 @@ gaps or overlaps, where each vertex has the same arrangement of polygons.
 
 ![architile preview](./examples/tilings.webp)
 
+## Installation
+
+Install from pypi:
+
+```bash
+pip install architile
+```
+
+or using `uv` instead:
+
+```bash
+uv add architile
+```
+
 ## Getting started
 
 ```py
@@ -41,3 +55,7 @@ nodes, edges = tile_into_rectangle((0.0, 0.0, 5.0, 3.0), tile, theta=np.pi/12)
 ## Disclaimer
 
 This is a research project, and the code is provided "as is" without warranty of any kind. Use at your own risk.
+
+---
+
+Consider starring the repo if you find it useful⭐
