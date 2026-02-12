@@ -47,13 +47,17 @@ class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
     def edge_spec(self) -> Array:
         """Return (ne, 4) array of (i, j, di, dj)."""
 
-    def tile(self, nx: int, ny: int, *, x0: Sequence = (0, 0)) -> tuple[Array, Array]:
+    def tile(
+        self, nx: int, ny: int, *, x0: Sequence = (0, 0), periodic: bool = False
+    ) -> tuple[Array, Array]:
         """Generate tiling in local coordinates.
 
         Args:
             nx: Number of tiles in x direction.
             ny: Number of tiles in y direction.
             x0: Origin offset. Defaults to (0, 0).
+            periodic: If True, wrap connectivity across x/y boundaries. No ghost nodes are
+                created. Defaults to False.
 
         Returns:
             A tuple (nodes, edges) where nodes is an array of shape (N, 2) with the
@@ -68,12 +72,14 @@ class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
         nodes = (nodes[:, None, :] + self.tiling_basis()[None, :, :]).reshape(-1, 2)
 
         # create edges
-        edges = self._connectivity_from_spec(nx, ny, self.edge_spec())
+        if periodic:
+            edges = self._connectivity_from_spec_periodic(nx, ny, self.edge_spec())
+        else:
+            edges = self._connectivity_from_spec(nx, ny, self.edge_spec())
         return nodes, edges
 
     def _connectivity_from_spec(self, nx: int, ny: int, spec: Array) -> Array:
         # spec: (ne, 4) = (i, j, di, dj)
-        i_site, j_site, di, dj = spec.T
         nb = self.tiling_basis().shape[0]
 
         I, J = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")  # noqa: E741
@@ -103,6 +109,35 @@ class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
         edges = np.vstack(edges)
 
         # TODO: decide if this should be kept for safety
+        # sort & unique
+        edges = np.sort(edges, axis=1)
+        edges = np.unique(edges, axis=0)
+        return edges
+
+    def _connectivity_from_spec_periodic(self, nx: int, ny: int, spec: Array) -> Array:
+        # spec: (ne, 4) = (i, j, di, dj)
+        nb = self.tiling_basis().shape[0]
+
+        I, J = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")  # noqa: E741
+        I = I.ravel()  # noqa: E741
+        J = J.ravel()
+        cell_id = I * ny + J  # (nc,)
+
+        edges = []
+
+        for isite, jsite, dI, dJ in spec:
+            I2 = (I + dI) % nx
+            J2 = (J + dJ) % ny
+
+            n1 = cell_id * nb + isite
+            n2 = (I2 * ny + J2) * nb + jsite
+            edges.append(np.stack([n1, n2], axis=1))
+
+        if not edges:
+            return np.empty((0, 2), dtype=int)
+
+        edges = np.vstack(edges)
+
         # sort & unique
         edges = np.sort(edges, axis=1)
         edges = np.unique(edges, axis=0)
