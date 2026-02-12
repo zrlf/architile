@@ -13,13 +13,23 @@ dependencies = [
     "numpy>=2.3.5",
 ]
 
+[project.urls]
+repository = "https://github.com/zrlf/architile"
+changelog = "https://github.com/zrlf/architile/blob/main/CHANGELOG.md"
+
 [build-system]
 requires = ["uv_build>=0.9.9,<0.10.0"]
 build-backend = "uv_build"
 
+[dependency-groups]
+dev = [
+    "commitizen>=4.13.7",
+    "ipykernel>=7.1.0",
+    "matplotlib>=3.10.7",
+]
+
 [tool.uv.build-backend]
 module-root = ""
-
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -28,9 +38,3 @@ version_scheme = "pep440"
 version_provider = "uv"
 update_changelog_on_bump = true
 major_version_zero = true
-[dependency-groups]
-dev = [
-    "commitizen>=4.13.7",
-    "ipykernel>=7.1.0",
-    "matplotlib>=3.10.7",
-]
