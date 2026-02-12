@@ -38,17 +38,19 @@ def tile_into_rectangle(
 ) -> tuple[Array, Array]: ...
 def tile_into_rectangle(
     rect,
-    tiling,
+    tiling: ArchimedeanTiling,
     theta=0.0,
     *,
     return_full=False,
     boundary=BoundaryHandling.DISCARD,
 ):
-    """Generate a tiling that fits into a rectangle of size (lx, ly).
+    """Generate a tiling that fits into a rectangle of size (lx, ly). Does not offer the
+    inclusion of periodic edges, or the option to add ghost nodes for periodicity
+    handling. For this, use `tiling.tile_with_ghost_nodes` or
+    `tiling.tile_with_periodic_edges` of a specific tiling directly.
 
     Args:
-        lx: Length of the rectangle in x direction.
-        ly: Length of the rectangle in y direction.
+        rect: (x0, y0, lx, ly) defining the rectangle in cartesian coordinates.
         tiling: Tiling object to use.
         theta: Rotation angle of the tiling (in radians). Defaults to 0.0.
         return_full: If True, also returns all generated nodes before clipping. Defaults

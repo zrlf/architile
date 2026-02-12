@@ -22,6 +22,14 @@ all_tilings: dict[str, type["ArchimedeanTiling"]] = {}
 class _CollectAllTilingsMeta(type):
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
+
+        # include module name in name to avoid name conflicts with other tiling types
+        # (e.g. orthogonal)
+        mod = new_class.__module__.split(".")[-1]
+        # if mod is __main__, use the class name only
+        if mod != "__main__":
+            name = f"{mod}.{name}"
+
         if name != "ArchimedeanTiling":
             all_tilings[name] = new_class
         return new_class
@@ -52,20 +60,69 @@ class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
             coordinates of the nodes, and edges is an array of shape (M, 2) with the
             indices of the nodes forming each edge.
         """
+        nodes = self._get_nodes(nx, ny, x0)
+        edges = self._connectivity_from_spec(nx, ny, self.edge_spec())
+        return nodes, edges
+
+    def tile_with_periodic_edges(
+        self, nx: int, ny: int, *, x0: Sequence = (0, 0)
+    ) -> tuple[Array, Array]:
+        """Generate tiling and wrap connectivity across right/top boundaries.
+
+        No ghost nodes are created. Edges that would cross the right/top boundary are
+        wrapped to the opposite side by using modulo arithmetic on node indices.
+
+        Args:
+            nx: Number of tiles in x direction.
+            ny: Number of tiles in y direction.
+            x0: Origin offset. Defaults to (0, 0).
+
+        Returns:
+            A tuple (nodes, edges) where nodes is an array of shape (N, 2) with the
+            coordinates of the nodes, and edges is an array of shape (M, 2) with the
+            indices of the nodes forming each edge. Edges that would cross the right/top
+            boundary are wrapped to the opposite side.
+        """
+        nodes = self._get_nodes(nx, ny, x0)
+        edges = self._connectivity_from_spec_periodic(nx, ny, self.edge_spec())
+        return nodes, edges
+
+    def tile_with_ghost_nodes(
+        self, nx: int, ny: int, *, x0: Sequence = (0, 0)
+    ) -> tuple[Array, Array, Array]:
+        """Generate tiling and append periodic ghost nodes on right/top boundaries.
+
+        Ghost nodes are added only when required by `edge_spec` entries that cross the
+        right and/or top boundary, and represent wrapped left/bottom nodes translated by
+        lattice periods.
+
+        Returns:
+            A tuple (nodes, edges, ghost_map), where:
+            - nodes: (N + Ng, 2) coordinates including ghost nodes.
+            - edges: (M, 2) connectivity using original and ghost indices.
+            - ghost_map: (Ng, 2) array of (ghost_idx, real_idx), mapping each ghost
+              node back to its wrapped in-domain node.
+        """
+        nodes = self._get_nodes(nx, ny, x0)
+
+        edges, ghost_nodes, ghost_map = self._connectivity_from_spec_with_ghosts(
+            nx, ny, self.edge_spec(), nodes
+        )
+        if ghost_nodes.size == 0:
+            return nodes, edges, ghost_map
+        return np.vstack((nodes, ghost_nodes)), edges, ghost_map
+
+    def _get_nodes(self, nx: int, ny: int, x0: Sequence = (0, 0)) -> Array:
         IJ = np.stack(
             np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij"), axis=-1
         ).reshape(-1, 2)
         nodes = IJ @ self.bravais_vectors() + np.array(x0)
         # map basis to all nodes
         nodes = (nodes[:, None, :] + self.tiling_basis()[None, :, :]).reshape(-1, 2)
-
-        # create edges
-        edges = self._connectivity_from_spec(nx, ny, self.edge_spec())
-        return nodes, edges
+        return nodes
 
     def _connectivity_from_spec(self, nx: int, ny: int, spec: Array) -> Array:
         # spec: (ne, 4) = (i, j, di, dj)
-        i_site, j_site, di, dj = spec.T
         nb = self.tiling_basis().shape[0]
 
         I, J = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")  # noqa: E741
@@ -99,6 +156,104 @@ class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
         edges = np.sort(edges, axis=1)
         edges = np.unique(edges, axis=0)
         return edges
+
+    def _connectivity_from_spec_periodic(self, nx: int, ny: int, spec: Array) -> Array:
+        # spec: (ne, 4) = (i, j, di, dj)
+        nb = self.tiling_basis().shape[0]
+
+        I, J = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")  # noqa: E741
+        I = I.ravel()  # noqa: E741
+        J = J.ravel()
+        cell_id = I * ny + J  # (nc,)
+
+        edges = []
+
+        for isite, jsite, dI, dJ in spec:
+            I2 = (I + dI) % nx
+            J2 = (J + dJ) % ny
+
+            n1 = cell_id * nb + isite
+            n2 = (I2 * ny + J2) * nb + jsite
+            edges.append(np.stack([n1, n2], axis=1))
+
+        if not edges:
+            return np.empty((0, 2), dtype=int)
+
+        edges = np.vstack(edges)
+
+        # sort & unique
+        edges = np.sort(edges, axis=1)
+        edges = np.unique(edges, axis=0)
+        return edges
+
+    def _connectivity_from_spec_with_ghosts(
+        self, nx: int, ny: int, spec: Array, nodes: Array
+    ) -> tuple[Array, Array, Array]:
+        # spec: (ne, 4) = (i, j, di, dj)
+        nb = self.tiling_basis().shape[0]
+        a1, a2 = self.bravais_vectors()
+
+        I, J = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")  # noqa: E741
+        I = I.ravel()  # noqa: E741
+        J = J.ravel()
+        cell_id = I * ny + J  # (nc,)
+
+        edges = []
+        ghost_nodes = []
+        ghost_map = []
+        ghost_lookup: dict[tuple[int, int, int], int] = {}
+        base_n = nodes.shape[0]
+
+        for isite, jsite, dI, dJ in spec:
+            I2 = I + dI
+            J2 = J + dJ
+
+            in_bounds = (I2 >= 0) & (I2 < nx) & (J2 >= 0) & (J2 < ny)
+            if np.any(in_bounds):
+                cell1 = cell_id[in_bounds]
+                cell2 = I2[in_bounds] * ny + J2[in_bounds]
+                n1 = cell1 * nb + isite
+                n2 = cell2 * nb + jsite
+                edges.append(np.stack([n1, n2], axis=1))
+
+            # Ghosts only for right/top crossings.
+            cross_rt = ~in_bounds & ((I2 >= nx) | (J2 >= ny))
+            if not np.any(cross_rt):
+                continue
+
+            src = cell_id[cross_rt] * nb + isite
+            I2c = I2[cross_rt]
+            J2c = J2[cross_rt]
+            Iw = I2c % nx
+            Jw = J2c % ny
+            real = (Iw * ny + Jw) * nb + jsite
+            sx = I2c // nx
+            sy = J2c // ny
+
+            for n1, nreal, shx, shy in zip(src, real, sx, sy, strict=False):
+                key = (int(nreal), int(shx), int(shy))
+                if key not in ghost_lookup:
+                    gidx = base_n + len(ghost_nodes)
+                    ghost_lookup[key] = gidx
+                    ghost_nodes.append(nodes[nreal] + shx * nx * a1 + shy * ny * a2)
+                    ghost_map.append([gidx, int(nreal)])
+                edges.append(np.array([[int(n1), ghost_lookup[key]]], dtype=int))
+
+        if edges:
+            edges_arr = np.vstack(edges)
+            edges_arr = np.sort(edges_arr, axis=1)
+            edges_arr = np.unique(edges_arr, axis=0)
+        else:
+            edges_arr = np.empty((0, 2), dtype=int)
+
+        if ghost_nodes:
+            ghosts_arr = np.asarray(ghost_nodes, dtype=float)
+            ghost_map_arr = np.asarray(ghost_map, dtype=int)
+        else:
+            ghosts_arr = np.empty((0, 2), dtype=float)
+            ghost_map_arr = np.empty((0, 2), dtype=int)
+
+        return edges_arr, ghosts_arr, ghost_map_arr
 
 
 class Hex(ArchimedeanTiling):
