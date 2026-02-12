@@ -22,6 +22,14 @@ all_tilings: dict[str, type["ArchimedeanTiling"]] = {}
 class _CollectAllTilingsMeta(type):
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
+
+        # include module name in name to avoid name conflicts with other tiling types
+        # (e.g. orthogonal)
+        mod = new_class.__module__.split(".")[-1]
+        # if mod is __main__, use the class name only
+        if mod != "__main__":
+            name = f"{mod}.{name}"
+
         if name != "ArchimedeanTiling":
             all_tilings[name] = new_class
         return new_class
