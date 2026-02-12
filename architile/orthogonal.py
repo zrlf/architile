@@ -76,3 +76,43 @@ class Hex(ArchimedeanTiling):
             dtype=int,
         )
 
+
+class Kagome(ArchimedeanTiling):
+    """Same as `tiling.Kagome`, but with orthogonal periodicity."""
+
+    def bravais_vectors(self):
+        a = self.a
+        return np.array([[a, 0], [0, np.sqrt(3) * a]])
+
+    def tiling_basis(self):
+        a = self.a
+        return np.array(
+            [
+                [0, 0],
+                [a / 4, np.sqrt(3) * a / 4],
+                [a / 2, 0],
+                [0, np.sqrt(3) * a / 2],
+                [a / 2, np.sqrt(3) * a / 2],
+                [3 * a / 4, 3 / 4 * np.sqrt(3) * a],
+            ]
+        )
+
+    def edge_spec(self):
+        return np.array(
+            [
+                [0, 1, 0, 0],
+                [0, 2, 0, 0],
+                [1, 2, 0, 0],
+                [1, 3, 0, 0],
+                [1, 4, 0, 0],
+                [3, 4, 0, 0],
+                [4, 5, 0, 0],
+                # edges that cross the unit cell boundary
+                [2, 0, +1, 0],
+                [4, 3, +1, 0],
+                [5, 3, +1, 0],
+                [5, 2, 0, +1],
+                [5, 0, +1, +1],
+            ],
+            dtype=int,
+        )
