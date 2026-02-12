@@ -20,8 +20,17 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-root = ""
 
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+major_version_zero = true
 [dependency-groups]
 dev = [
+    "commitizen>=4.13.7",
     "ipykernel>=7.1.0",
     "matplotlib>=3.10.7",
 ]
