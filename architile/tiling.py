@@ -47,36 +47,54 @@ class ArchimedeanTiling(metaclass=_CollectAllTilingsMeta):
     def edge_spec(self) -> Array:
         """Return (ne, 4) array of (i, j, di, dj)."""
 
-    def tile(
-        self, nx: int, ny: int, *, x0: Sequence = (0, 0), periodic: bool = False
-    ) -> tuple[Array, Array]:
+    def tile(self, nx: int, ny: int, *, x0: Sequence = (0, 0)) -> tuple[Array, Array]:
         """Generate tiling in local coordinates.
 
         Args:
             nx: Number of tiles in x direction.
             ny: Number of tiles in y direction.
             x0: Origin offset. Defaults to (0, 0).
-            periodic: If True, wrap connectivity across x/y boundaries. No ghost nodes are
-                created. Defaults to False.
 
         Returns:
             A tuple (nodes, edges) where nodes is an array of shape (N, 2) with the
             coordinates of the nodes, and edges is an array of shape (M, 2) with the
             indices of the nodes forming each edge.
         """
+        nodes = self._get_nodes(nx, ny, x0)
+        edges = self._connectivity_from_spec(nx, ny, self.edge_spec())
+        return nodes, edges
+
+    def tile_with_periodic_edges(
+        self, nx: int, ny: int, *, x0: Sequence = (0, 0)
+    ) -> tuple[Array, Array]:
+        """Generate tiling and wrap connectivity across right/top boundaries.
+
+        No ghost nodes are created. Edges that would cross the right/top boundary are
+        wrapped to the opposite side by using modulo arithmetic on node indices.
+
+        Args:
+            nx: Number of tiles in x direction.
+            ny: Number of tiles in y direction.
+            x0: Origin offset. Defaults to (0, 0).
+
+        Returns:
+            A tuple (nodes, edges) where nodes is an array of shape (N, 2) with the
+            coordinates of the nodes, and edges is an array of shape (M, 2) with the
+            indices of the nodes forming each edge. Edges that would cross the right/top
+            boundary are wrapped to the opposite side.
+        """
+        nodes = self._get_nodes(nx, ny, x0)
+        edges = self._connectivity_from_spec_periodic(nx, ny, self.edge_spec())
+        return nodes, edges
+
+    def _get_nodes(self, nx: int, ny: int, x0: Sequence = (0, 0)) -> Array:
         IJ = np.stack(
             np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij"), axis=-1
         ).reshape(-1, 2)
         nodes = IJ @ self.bravais_vectors() + np.array(x0)
         # map basis to all nodes
         nodes = (nodes[:, None, :] + self.tiling_basis()[None, :, :]).reshape(-1, 2)
-
-        # create edges
-        if periodic:
-            edges = self._connectivity_from_spec_periodic(nx, ny, self.edge_spec())
-        else:
-            edges = self._connectivity_from_spec(nx, ny, self.edge_spec())
-        return nodes, edges
+        return nodes
 
     def _connectivity_from_spec(self, nx: int, ny: int, spec: Array) -> Array:
         # spec: (ne, 4) = (i, j, di, dj)
