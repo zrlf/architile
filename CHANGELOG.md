@@ -1,3 +1,10 @@
+## v0.2.1 (2026-02-12)
+
+### Feat
+
+- **ortho**: orthogonal Kagome tiling
+- **ortho**: orthogonal Hex tiling
+
 ## v0.2.0 (2026-02-12)
 
 ### Feat
