@@ -1,6 +1,6 @@
 [project]
 name = "architile"
-version = "0.1.0"
+version = "0.2.0"
 description = "An implementation of all 11 regular and Archimedean tilings"
 readme = "README.md"
 authors = [
